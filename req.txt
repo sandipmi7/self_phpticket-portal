@@ -1,0 +1,744 @@
+CodeShack
+Packages
+Tutorials
+Examples
+References
+Tools
+HTML CSS JavaScript jQuery PHP Python MySQL
+Ticketing System with PHP and MySQL
+Updated on April 26, 2023 by David Adams
+Ticketing System with PHP and MySQL
+In this tutorial, we'll be developing a ticketing system with PHP and MySQL. A ticketing system is a customer service tool that businesses can use to manage support cases on their website.
+
+The ticketing system structure will consist of a browse tickets page, create ticket page, and view ticket page. All tickets will be stored in a MySQL database, which we can subsequently retrieve and populate on our webpage with HTML and PHP.
+
+The Advanced package includes additional features and a download link to the source code.
+
+Contents
+Getting Started
+Requirements
+What You Will Learn in this Tutorial
+File Structure & Setup
+Creating the Database and setting-up Tables
+Designing the Ticketing System with CSS3
+Creating the Functions File
+Creating the Home Page
+Creating the Create Ticket Page
+Creating the View Ticket Page
+1. Getting Started
+Before we start programming our ticketing system, we need to make sure we have a fully functioning web server with PHP and MySQL installed.
+
+1.1. Requirements
+I recommend you download and install XAMPP on your development environment. I highly suggest you don't use XAMPP in your production environment as it's not suitable for this purpose.
+Make sure your web server is running PHP 5.4+. The latest version of XAMPP will come pre-built with the latest PHP version, and therefore you shouldn't encounter any issues.
+Download and install a code editor. You can use Notepad to edit the files, but I don't recommend it. Instead, use one of the following: Notepad++, Visual Studio Code, or Atom.
+1.2. What You Will Learn in this Tutorial
+Display MySQL Records — Retrieve tickets from the database and populate them with HTML5 and CSS3.
+Form Design — Design a create ticket form with HTML5 and CSS3.
+Database Management — Execute MySQL queries using the PDO interface (update tickets, create tickets, etc).
+Prepared SQL Queries — Secure your queries and prevent SQL injection with prepared statements.
+Basic Template — Create a basic template system using PHP functions (header and footer).
+1.3. File Structure & Setup
+We need to start our web server and create the directories and files we're going to use for our ticketing system. If you've installed XAMPP, follow the instructions below.
+
+Open XAMPP Control Panel
+Next to the Apache module, click Start
+Next to the MySQL module, click Start
+Navigate to XAMPP's installation directory (C:\xampp)
+Open the htdocs directory
+Create the following directories and files:
+File Structure
+\-- ticketsystem
+    |-- style.css
+    |-- index.php
+    |-- create.php
+    |-- view.php
+    |-- functions.php
+
+Each file will contain the following:
+
+style.css — The stylesheet (CSS3) for our ticketing system, which is used to format our structured (HTML) content.
+index.php — Retrieve all the tickets from the MySQL database, iterate the results, and output them accordingly.
+create.php — HTML form that'll be used to create tickets and insert them into the MySQL database.
+view.php — The view page will contain all the information related to the ticket and will consist of buttons that'll update the status of the ticket (close, resolve, etc.), and user-submitted comments.
+functions.php — This file will contain the MySQL database connection function and the header and footer functions.
+2. Creating the Database and setting-up Tables
+We need to create the MySQL database and create the tickets table. We can do this with phpMyAdmin (included with XAMPP).
+
+Navigate to phpMyAdmin (e.g., http://localhost/phpmyadmin/) in your browser and follow the below instructions.
+
+Click the Databases tab at the top
+Under Create database, type in phpticket in the text box
+Select utf8_general_ci as the collation (UTF-8 is the default encoding in HTML5)
+Click Create
+While the database is selected, click the SQL tab and execute the following statement:
+
+SQL
+Copy
+CREATE TABLE IF NOT EXISTS `tickets` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`title` varchar(255) NOT NULL,
+	`msg` text NOT NULL,
+	`email` varchar(255) NOT NULL,
+	`created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`status` enum('open','closed','resolved') NOT NULL DEFAULT 'open',
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+INSERT INTO `tickets` (`id`, `title`, `msg`, `email`, `created`, `status`) VALUES (1, 'Test Ticket', 'This is your first ticket.', 'support@codeshack.io', '2023-04-02 13:06:17', 'open');
+
+CREATE TABLE IF NOT EXISTS `tickets_comments` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`ticket_id` int(11) NOT NULL,
+	`msg` text NOT NULL,
+	`created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+INSERT INTO `tickets_comments` (`id`, `ticket_id`, `msg`, `created`) VALUES (1, 1, 'This is a test comment.', '2023-04-02 16:23:39');
+The data that we insert into the tickets and tickets_comments tables will be for testing purposes.
+
+The above SQL code will create the tickets and tickets_comments table. View the definition of each column below.
+
+tickets:
+
+id — The unique ticket ID.
+title — The title of the ticket.
+msg — The ticket message.
+created — The date the ticket was submitted.
+status — The status of the ticket, which can be defined as open, closed, or resolved.
+tickets_comments:
+
+id — The unique ticket ID.
+ticket_id — The ticket ID, which will be used to associate both tables and create a relation.
+msg — The comment message.
+created — The date the comment was submitted.
+On phpMyAdmin the tickets table structure should look like the following:
+
+http://localhost/phpmyadmin/
+MySQL Tickets Table
+And the tickets_comments table should look like the following:
+
+http://localhost/phpmyadmin/
+MySQL Tickets Comments Table
+3. Designing the Ticketing System with CSS3
+The stylesheet will format the layout of our ticketing system. With CSS (Cascading Style Sheets), we can change the font, color scheme, sizes, and more.
+
+Edit the style.css file and add:
+
+CSS
+Copy
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "segoe ui", roboto, oxygen, ubuntu, cantarell, "fira sans", "droid sans", "helvetica neue", Arial, sans-serif;
+    font-size: 16px;
+}
+body {
+    background-color: #FFFFFF;
+    margin: 0;
+}
+.navtop {
+    background-color: #3f69a8;
+    height: 60px;
+    width: 100%;
+    border: 0;
+}
+.navtop div {
+    display: flex;
+    margin: 0 auto;
+    width: 1000px;
+    height: 100%;
+}
+.navtop div h1, .navtop div a {
+    display: inline-flex;
+    align-items: center;
+}
+.navtop div h1 {
+    flex: 1;
+    font-size: 24px;
+    padding: 0;
+    margin: 0;
+    color: #ecf0f6;
+    font-weight: normal;
+}
+.navtop div a {
+    padding: 0 20px;
+    text-decoration: none;
+    color: #c5d2e5;
+    font-weight: bold;
+}
+.navtop div a i {
+    padding: 2px 8px 0 0;
+}
+.navtop div a:hover {
+    color: #ecf0f6;
+}
+.content {
+    width: 1000px;
+    margin: 0 auto;
+}
+.content h2 {
+    margin: 0;
+    padding: 25px 0;
+    font-size: 22px;
+    border-bottom: 1px solid #ebebeb;
+    color: #666666;
+}
+.btns {
+    display: flex;
+}
+.btns .btn {
+    display: inline-block;
+    text-decoration: none;
+    background-color: #38b673;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 5px;
+    color: #FFFFFF;
+    padding: 10px 15px;
+    margin: 15px 10px 15px 0;
+}
+.btns .btn:hover {
+    background-color: #32a367;
+}
+.btns .btn.red {
+    background-color: #b63838;
+}
+.btns .btn.red:hover {
+    background-color: #a33232;
+}
+.home .tickets-list {
+    display: flex;
+    flex-flow: column;
+}
+.home .tickets-list .ticket {
+    padding: 15px 0;
+    width: 100%;
+    border-bottom: 1px solid #ebebeb;
+    display: flex;
+    text-decoration: none;
+}
+.home .tickets-list .ticket .con {
+    display: flex;
+    justify-content: center;
+    flex-flow: column;
+}
+.home .tickets-list .ticket i {
+    text-align: center;
+    width: 80px;
+    color: #b3b3b3;
+}
+.home .tickets-list .ticket .title {
+    font-weight: 600;
+    color: #666666;
+}
+.home .tickets-list .ticket .msg {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 400px;
+    color: #999999;
+    font-size: 14px;
+}
+.home .tickets-list .ticket .created {
+    flex-grow: 1;
+    align-items: flex-end;
+    color: #999999;
+    font-size: 14px;
+}
+.home .tickets-list .ticket:last-child {
+    border-bottom: 0;
+}
+.home .tickets-list .ticket:hover {
+    background-color: #fcfcfc;
+}
+.view h2 .open, .view h2 .resolved {
+    color: #38b673;
+}
+.view h2 .closed {
+    color: #b63838;
+}
+.view .ticket {
+    padding: 20px 0;
+}
+.view .ticket .created {
+    color: gray;
+}
+.view .comments {
+    margin-top: 15px;
+    border-top: 1px solid #ebebeb;
+    padding: 25px 0;
+}
+.view .comments .comment {
+    display: flex;
+    padding-bottom: 5px;
+}
+.view .comments .comment div {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 70px;
+    color: #e6e6e6;
+    transform: scaleX(-1);
+}
+.view .comments .comment p {
+    margin: 0 0 20px 0;
+}
+.view .comments .comment p span {
+    display: flex;
+    font-size: 14px;
+    padding-bottom: 5px;
+    color: gray;
+}
+.create form, .view form {
+    padding: 15px 0;
+    display: flex;
+    flex-flow: column;
+    width: 400px;
+}
+.create form label, .view form label {
+    display: inline-flex;
+    width: 100%;
+    padding: 10px 0;
+    margin-right: 25px;
+}
+.create form input, .create form textarea, .view form input, .view form textarea {
+    padding: 10px;
+    width: 100%;
+    margin-right: 25px;
+    margin-bottom: 15px;
+    border: 1px solid #cccccc;
+}
+.create form textarea, .view form textarea {
+    height: 200px;
+}
+.create form input[type="submit"], .view form input[type="submit"] {
+    display: block;
+    background-color: #38b673;
+    border: 0;
+    font-weight: bold;
+    font-size: 14px;
+    color: #FFFFFF;
+    cursor: pointer;
+    width: 200px;
+    margin-top: 15px;
+    border-radius: 5px;
+}
+.create form input[type="submit"]:hover, .view form input[type="submit"]:hover {
+    background-color: #32a367;
+}
+That's basically all we need to add to our stylesheet. Feel free to customize it to your liking.
+
+4. Creating the Functions File
+The functions file will contain all the functions we're going to use in our ticketing system, which includes the PDO database connection function, template header function, and template footer function.
+
+Edit the functions.php file and add:
+
+PHP
+Copy
+<?php
+function pdo_connect_mysql() {
+    // Update the details below with your MySQL details
+    $DATABASE_HOST = 'localhost';
+    $DATABASE_USER = 'root';
+    $DATABASE_PASS = '';
+    $DATABASE_NAME = 'phpticket';
+    try {
+    	return new PDO('mysql:host=' . $DATABASE_HOST . ';dbname=' . $DATABASE_NAME . ';charset=utf8', $DATABASE_USER, $DATABASE_PASS);
+    } catch (PDOException $exception) {
+    	// If there is an error with the connection, stop the script and display the error.
+    	exit('Failed to connect to database!');
+    }
+}
+The above function we'll use to connect to our MySQL database using the PDO interface. The database variables must reflect your MySQL database credentials.
+
+Add after:
+
+PHP
+Copy
+// Template header, feel free to customize this
+function template_header($title) {
+echo <<<EOT
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>$title</title>
+		<link href="style.css" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+	</head>
+	<body>
+    <nav class="navtop">
+    	<div>
+    		<h1>Ticketing System</h1>
+            <a href="index.php"><i class="fas fa-ticket-alt"></i>Tickets</a>
+    	</div>
+    </nav>
+EOT;
+}
+This is our template header function. Instead of repeating the same code in every file, we can simply execute the above function.
+
+Add after:
+
+PHP
+Copy
+// Template footer
+function template_footer() {
+echo <<<EOT
+    </body>
+</html>
+EOT;
+}
+?>
+Similar to the template header function, but instead, the template footer function will append the closing tags to our template. The template code that we add in all our files will be placed between these two functions.
+
+5. Creating the Home Page
+The home page will consist of a populated list of tickets with links that will redirect the user to the ticket page. The "create ticket button" will also be included on this page. All the tickets are retrieved from the MySQL database.
+
+Edit index.php and add:
+
+PHP
+Copy
+<?php
+include 'functions.php';
+// Connect to MySQL using the below function
+$pdo = pdo_connect_mysql();
+// MySQL query that retrieves all the tickets from the database
+$stmt = $pdo->prepare('SELECT * FROM tickets ORDER BY created DESC');
+$stmt->execute();
+$tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+The first thing we have to do is include the functions file, as we'll be using all the functions from this file, and subsequently execute a SQL query that retrieves all the tickets from our tickets table — ordered by the date the ticket was created (descending).
+
+The results are then stored in an array that we can later use to populate with HTML.
+
+Add after:
+
+PHP
+Copy
+<?=template_header('Tickets')?>
+
+<div class="content home">
+
+	<h2>Tickets</h2>
+
+	<p>Welcome to the index page. You can view the list of tickets below.</p>
+
+	<div class="btns">
+		<a href="create.php" class="btn">Create Ticket</a>
+	</div>
+
+	<div class="tickets-list">
+		<?php foreach ($tickets as $ticket): ?>
+		<a href="view.php?id=<?=$ticket['id']?>" class="ticket">
+			<span class="con">
+				<?php if ($ticket['status'] == 'open'): ?>
+				<i class="far fa-clock fa-2x"></i>
+				<?php elseif ($ticket['status'] == 'resolved'): ?>
+				<i class="fas fa-check fa-2x"></i>
+				<?php elseif ($ticket['status'] == 'closed'): ?>
+				<i class="fas fa-times fa-2x"></i>
+				<?php endif; ?>
+			</span>
+			<span class="con">
+				<span class="title"><?=htmlspecialchars($ticket['title'], ENT_QUOTES)?></span>
+				<span class="msg"><?=htmlspecialchars($ticket['msg'], ENT_QUOTES)?></span>
+			</span>
+			<span class="con created"><?=date('F dS, G:ia', strtotime($ticket['created']))?></span>
+		</a>
+		<?php endforeach; ?>
+	</div>
+
+</div>
+
+<?=template_footer()?>
+With the above code, we execute the template header and footer functions, and between those two functions, we iterate the tickets using a foreach loop and populate them accordingly using the HTML hyperlink tag.
+
+We use the htmlspecialchars function to prevent XSS attacks, which will convert special characters to HTML entities and therefore any attack presented will be converted.
+
+This is all we need to do for the home page. If we navigate to http://localhost/ticketsystem/index.php in our browser, we should see the following:
+
+http://localhost/ticketsystem/index.php
+PHP Tickets List
+6. Creating the Create Ticket Page
+The Create Ticket page will contain an HTML form the visitors can use to submit tickets.
+
+Edit the create.php file and add:
+
+PHP
+Copy
+<?php
+include 'functions.php';
+$pdo = pdo_connect_mysql();
+// Output message variable
+$msg = '';
+// Check if POST data exists (the user submitted the form)
+if (isset($_POST['title'], $_POST['email'], $_POST['msg'])) {
+    // Validation checks... make sure the POST data is not empty
+    if (empty($_POST['title']) || empty($_POST['email']) || empty($_POST['msg'])) {
+        $msg = 'Please complete the form!';
+    } else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+        $msg = 'Please provide a valid email address!';
+    } else {
+        // Insert new record into the tickets table
+        $stmt = $pdo->prepare('INSERT INTO tickets (title, email, msg) VALUES (?, ?, ?)');
+        $stmt->execute([ $_POST['title'], $_POST['email'], $_POST['msg'] ]);
+        // Redirect to the view ticket page. The user will see their created ticket on this page.
+        header('Location: view.php?id=' . $pdo->lastInsertId());
+        exit;
+    }
+}
+?>
+Upon form submission, the data is transferred to our server using the POST request method. As you can see in the code above, we use the $_POST array to retrieve the data. If the POST variables exist and are not empty, insert the data into the MySQL tickets table.
+
+The header function will redirect the user to their ticket page upon form submission.
+
+Add after:
+
+PHP
+Copy
+<?=template_header('Create Ticket')?>
+
+<div class="content create">
+	<h2>Create Ticket</h2>
+    <form action="create.php" method="post">
+        <label for="title">Title</label>
+        <input type="text" name="title" placeholder="Title" id="title" required>
+        <label for="email">Email</label>
+        <input type="email" name="email" placeholder="johndoe@example.com" id="email" required>
+        <label for="msg">Message</label>
+        <textarea name="msg" placeholder="Enter your message here..." id="msg" required></textarea>
+        <input type="submit" value="Create">
+    </form>
+    <?php if ($msg): ?>
+    <p><?=$msg?></p>
+    <?php endif; ?>
+</div>
+
+<?=template_footer()?>
+The code above is the HTML form template that consists of input, label, and textarea elements. The $msg variable will output the validation errors.
+
+If we click the Create Ticket button on the home page, we should see:
+
+http://localhost/ticketsystem/create.php
+Create Ticket
+7. Creating the View Ticket Page
+On the view ticket page, the user will be able to view all the details associated with their ticket, along with comments and the buttons to change the status of the ticket (open, closed, resolved, etc.).
+
+Edit the view.php file and add:
+
+PHP
+Copy
+<?php
+include 'functions.php';
+// Connect to MySQL using the below function
+$pdo = pdo_connect_mysql();
+// Check if the ID param in the URL exists
+if (!isset($_GET['id'])) {
+    exit('No ID specified!');
+}
+// MySQL query that selects the ticket by the ID column, using the ID GET request variable
+$stmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+$stmt->execute([ $_GET['id'] ]);
+$ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+// Check if ticket exists
+if (!$ticket) {
+    exit('Invalid ticket ID!');
+}
+To view this page, the ticket ID param needs to be included in the URL as we're using a GET request to determine the ticket ID, and subsequently, we can retrieve the ID with PHP using the $_GET['id'] variable.
+
+The prepared statement will prevent SQL injection and retrieve the ticket from the MySQL tickets table. If the ticket does not exist, then the script will end and output the error.
+
+Add after:
+
+PHP
+Copy
+// Update status
+if (isset($_GET['status']) && in_array($_GET['status'], array('open', 'closed', 'resolved'))) {
+    $stmt = $pdo->prepare('UPDATE tickets SET status = ? WHERE id = ?');
+    $stmt->execute([ $_GET['status'], $_GET['id'] ]);
+    header('Location: view.php?id=' . $_GET['id']);
+    exit;
+}
+The code above will update the status of the ticket, but only if the GET param exists and the value is either: open, closed, or resolved. The code will only execute when the user clicks the Close or Resolve button.
+
+Add after:
+
+PHP
+Copy
+// Check if the comment form has been submitted
+if (isset($_POST['msg']) && !empty($_POST['msg'])) {
+    // Insert the new comment into the "tickets_comments" table
+    $stmt = $pdo->prepare('INSERT INTO tickets_comments (ticket_id, msg) VALUES (?, ?)');
+    $stmt->execute([ $_GET['id'], $_POST['msg'] ]);
+    header('Location: view.php?id=' . $_GET['id']);
+    exit;
+}
+$stmt = $pdo->prepare('SELECT * FROM tickets_comments WHERE ticket_id = ? ORDER BY created DESC');
+$stmt->execute([ $_GET['id'] ]);
+$comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+The above code will handle the comments on the ticket page. Users can use the comment section to respond to tickets. All comments are retrieved using the ticket ID and are stored in the tickets_comments table.
+
+Did You Know?
+The isset() function will ensure the declared variable exists before the subsequent code is executed. It's useful for GET and POST parameters.
+
+Add after:
+
+PHP
+Copy
+<?=template_header('Ticket')?>
+
+<div class="content view">
+
+	<h2><?=htmlspecialchars($ticket['title'], ENT_QUOTES)?> <span class="<?=$ticket['status']?>">(<?=$ticket['status']?>)</span></h2>
+
+    <div class="ticket">
+        <p class="created"><?=date('F dS, G:ia', strtotime($ticket['created']))?></p>
+        <p class="msg"><?=nl2br(htmlspecialchars($ticket['msg'], ENT_QUOTES))?></p>
+    </div>
+
+    <div class="btns">
+        <a href="view.php?id=<?=$_GET['id']?>&status=closed" class="btn red">Close</a>
+        <a href="view.php?id=<?=$_GET['id']?>&status=resolved" class="btn">Resolve</a>
+    </div>
+
+    <div class="comments">
+        <?php foreach($comments as $comment): ?>
+        <div class="comment">
+            <div>
+                <i class="fas fa-comment fa-2x"></i>
+            </div>
+            <p>
+                <span><?=date('F dS, G:ia', strtotime($comment['created']))?></span>
+                <?=nl2br(htmlspecialchars($comment['msg'], ENT_QUOTES))?>
+            </p>
+        </div>
+        <?php endforeach; ?>
+        <form action="" method="post">
+            <textarea name="msg" placeholder="Enter your comment..."></textarea>
+            <input type="submit" value="Post Comment">
+        </form>
+    </div>
+
+</div>
+
+<?=template_footer()?>
+The above code is the template for this page.
+
+If we navigate back to the Tickets page and click the Test Ticket, we should see the following:
+
+http://localhost/ticketsystem/view.php?id=1
+View Ticket
+Conclusion
+Congratulations! You have successfully created a ticketing system with PHP and MySQL. Looking for a more advanced ticketing system? Consider purchasing the advanced package, which will help support future developments and tutorials.
+
+What next? Consider implementing more robust features to the system with the techniques you've learned from this tutorial.
+
+If you enjoyed this article, consider sharing it on social media using the social buttons below.
+
+If you would like to support us, consider purchasing the advanced ticketing system below as it will greatly help us create more tutorials and keep our website up and running. The advanced package includes improved code and more features.
+
+ADVANCED
+$25.00
+view more details
+Source Code 
+Secure Ticketing System 
+Database SQL File 
+User Authentication & Registration 
+Ticket File Attachments 
+Private & Public Tickets 
+Categories 
+Ticket Priorities 
+Ticket Comments 
+Search Tickets 
+Email Notifications 
+Responsive Design (mobile-friendly) 
+Admin Panel 
+SCSS file 
+Commented Code 
+User Guide 
+Free Updates & Support 
+Extra: Tutorial Source Code
+PayPal
+Download
+Stripe
+Download
+Crypto
+Download
+Sale
+BUNDLE (SAVE 59%)
+$119.00 290.00
+view more details
+Secure Login & Registration System
+Shopping Cart System
+CRUD Application
+Ticketing System
+Gallery System
+Event Calendar System
+Commenting System
+Poll and Voting System
+Review System
+Contact Form
+Live Support Chat System
+Newsletter & Mailing System
+File Management System
+Access to future scripts
+PayPal
+Download
+Stripe
+Download
+Crypto
+Download
+   
+ABOUT AUTHOR
+David Adams
+David Adams
+Enthusiastic website developer, I've been designing and developing web applications for over 10 years, I enjoy the creativity I put into my projects and enjoy what others bring to the awesome web. My goal is to help newcomers learn the ways of the web.
+
+mysql php programming ticketing system tutorials
+← Lightweight Template Engine with PHP
+Commenting System with PHP, MySQL, and AJAX →
+RELATED POSTS
+Shopping Cart System with PHP and MySQL
+Shopping Cart System with PHP and MySQL
+Live Support Chat with AJAX, PHP and MySQL
+Live Support Chat with AJAX, PHP and MySQL
+Poll and Voting System with PHP and MySQL
+Poll and Voting System with PHP and MySQL
+
+Search blog ...
+Become a Subscriber
+Stay up to date and join our newsletter to receive the latest updates.
+Email Address
+ Subscribe
+FOLLOW US
+  
+RECENT POSTS
+Elegant Toast Notifications with JavaScript
+Elegant Toast Notifications with JavaScript
+File Management System with PHP
+File Management System with PHP
+File Upload Progress Bar with JS and PHP
+File Upload Progress Bar with JS and PHP
+TAGS
+tutorials php programming mysql javascript snippets freebies ajax css php class html form login scripting registration pdo shopping cart javascript class mysqli hotel reservation form poll system template ticketing system toast notifications columns progamming database file upload snippet live support chat js node.js flask contact event calendar mvc review system table register gallery system mailing list commenting system survey form python jquery voting system crud modals sort progress bar cookie newsletter system pagination content locker sessions express
+CODESHACK.IO
+Packages
+Tutorials
+Examples
+References
+Tools
+Live Code Editor
+JSON Sorter
+Resend a Receipt
+About Us
+Contact Us
+Privacy Policy
+Terms
+FOLLOW US
+ 
+© 2023 CodeShack. All Rights Reserved. By using this website you accept the terms and conditions.
+By using this website, you agree to our privacy policy and that we and our partners may set cookies for purposes such as customising content and advertising.
+
+I understand
